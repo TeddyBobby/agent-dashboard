@@ -20,10 +20,10 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 const STATUS_LABELS: Record<string, string> = {
-  online: 'Online',
-  busy: 'Busy',
-  idle: 'Idle',
-  offline: 'Offline',
+  online: '在线',
+  busy: '忙碌',
+  idle: '空闲',
+  offline: '离线',
 };
 
 function formatTokens(n: number): string {
@@ -42,11 +42,11 @@ function formatUptime(s: number): string {
 function timeAgo(ms: number): string {
   const diff = Date.now() - ms;
   const min = Math.floor(diff / 60000);
-  if (min < 1) return 'just now';
-  if (min < 60) return `${min}m ago`;
+  if (min < 1) return '刚刚';
+  if (min < 60) return `${min} 分钟前`;
   const hr = Math.floor(min / 60);
-  if (hr < 24) return `${hr}h ago`;
-  return `${Math.floor(hr / 24)}d ago`;
+  if (hr < 24) return `${hr} 小时前`;
+  return `${Math.floor(hr / 24)} 天前`;
 }
 
 export default function Home() {
@@ -77,9 +77,9 @@ export default function Home() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
       {/* Header */}
       <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-6 py-4">
-        <h1 className="text-xl font-bold">🤖 Agent Dashboard</h1>
+        <h1 className="text-xl font-bold">🤖 Agent 监控面板</h1>
         <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-          Monitor your AI agents in real-time
+          实时监控你的 AI Agent
         </p>
       </header>
 
@@ -87,7 +87,7 @@ export default function Home() {
         {/* Agent status cards */}
         <section>
           <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
-            Agents
+            智能体
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {agents.map((agent) => (
@@ -113,15 +113,15 @@ export default function Home() {
                 )}
                 <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-gray-100 dark:border-gray-800">
                   <div>
-                    <div className="text-xs text-gray-400">Sessions</div>
+                    <div className="text-xs text-gray-400">会话</div>
                     <div className="text-sm font-semibold">{agent.totalSessions}</div>
                   </div>
                   <div>
-                    <div className="text-xs text-gray-400">Tokens</div>
+                    <div className="text-xs text-gray-400">Token</div>
                     <div className="text-sm font-semibold">{formatTokens(agent.totalTokens)}</div>
                   </div>
                   <div>
-                    <div className="text-xs text-gray-400">Uptime</div>
+                    <div className="text-xs text-gray-400">运行</div>
                     <div className="text-sm font-semibold">{formatUptime(agent.uptime)}</div>
                   </div>
                 </div>
@@ -135,7 +135,7 @@ export default function Home() {
           {/* Token usage bar chart */}
           <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
             <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-4">
-              Token Usage (7 days)
+              Token 用量（7 天）
             </h3>
             <div className="space-y-2">
               {tokenUsage.map((day) => {
@@ -163,10 +163,10 @@ export default function Home() {
             </div>
             <div className="flex gap-4 mt-3 text-xs text-gray-400">
               <span className="flex items-center gap-1">
-                <span className="w-3 h-3 bg-blue-500 rounded inline-block" /> Input
+                <span className="w-3 h-3 bg-blue-500 rounded inline-block" /> 输入
               </span>
               <span className="flex items-center gap-1">
-                <span className="w-3 h-3 bg-purple-500 rounded inline-block" /> Output
+                <span className="w-3 h-3 bg-purple-500 rounded inline-block" /> 输出
               </span>
             </div>
           </div>
@@ -174,7 +174,7 @@ export default function Home() {
           {/* Tool usage heatmap */}
           <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
             <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-4">
-              Tool Usage
+              工具用量
             </h3>
             <div className="space-y-2">
               {Object.entries(toolTotals)
@@ -204,11 +204,11 @@ export default function Home() {
         <section>
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-              Recent Sessions
+              最近会话
             </h2>
             <input
               type="text"
-              placeholder="Search sessions..."
+              placeholder="搜索会话..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 w-56"
@@ -218,19 +218,19 @@ export default function Home() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-200 dark:border-gray-800 text-left">
-                  <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">Session</th>
-                  <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">Agent</th>
-                  <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">Messages</th>
-                  <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">Tool Calls</th>
-                  <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">Tokens</th>
-                  <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">Last Active</th>
+                  <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">会话</th>
+                  <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">智能体</th>
+                  <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">消息</th>
+                  <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">工具调用</th>
+                  <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">Token</th>
+                  <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">最近活跃</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredSessions.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
-                      No sessions found
+                      未找到会话
                     </td>
                   </tr>
                 ) : (
@@ -245,7 +245,7 @@ export default function Home() {
                           {s.title}
                         </td>
                         <td className="px-4 py-3 text-gray-500">
-                          {agent?.name || 'Unknown'}
+                          {agent?.name || '未知'}
                         </td>
                         <td className="px-4 py-3 text-gray-500 font-mono">{s.messageCount}</td>
                         <td className="px-4 py-3 text-gray-500 font-mono">{s.toolCallCount}</td>
