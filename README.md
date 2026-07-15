@@ -4,6 +4,10 @@ A real-time monitoring dashboard for AI agents — track token usage, tool calls
 
 ![Agent Dashboard](public/screenshot.png)
 
+## 📸 Preview
+
+![Agent Dashboard](public/screenshot.png)
+
 ## ✨ Features
 
 - **Agent Status Cards** — Online/Busy/Idle/Offline with model, sessions, tokens, uptime
