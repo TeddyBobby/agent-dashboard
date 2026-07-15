@@ -1,24 +1,21 @@
-# Agent Dashboard 🤖
+# Agent Dashboard 🤖 / Agent 监控面板
 
-A real-time monitoring dashboard for AI agents — track token usage, tool calls, session history, and agent status at a glance.
+多 Agent 实时监控面板 —— 追踪 Token 消耗、工具调用、会话历史和 Agent 状态。
 
-![Agent Dashboard](public/screenshot.png)
-
-## 📸 Preview
+> A real-time monitoring dashboard for AI agents — track token usage, tool calls, session history, and agent status at a glance.
 
 ![Agent Dashboard](public/screenshot.png)
 
-## ✨ Features
+## ✨ 功能 Features
 
-- **Agent Status Cards** — Online/Busy/Idle/Offline with model, sessions, tokens, uptime
-- **Token Usage Charts** — 7-day input/output token breakdown with visual bars
-- **Tool Usage Analytics** — Frequency distribution across all tool types
-- **Session Table** — Searchable, filterable session history with full metrics
-- **Agent Filtering** — Click any agent card to filter sessions by agent
-- **Dark Mode** — System-aware theme
-- **Zero API Dependencies** — All data is demo-generated; plug in your own API
+- **Agent 状态卡片 Status Cards** — 在线/繁忙/空闲/离线，含模型、会话数、Token 数、运行时长
+- **Token 消耗图表 Token Charts** — 7 天输入/输出 Token 可视化条形图
+- **工具使用分析 Tool Analytics** — 各工具调用频率分布
+- **会话列表 Session Table** — 可搜索、可按 Agent 筛选的会话历史
+- **Agent 筛选 Filtering** — 点击 Agent 卡片即可筛选该 Agent 的会话
+- **暗色模式 Dark Mode**
 
-## 🚀 Quick Start
+## 🚀 快速开始 Quick Start
 
 ```bash
 git clone https://github.com/TeddyBobby/agent-dashboard.git
@@ -27,49 +24,47 @@ npm install
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000).
+## 🔌 接入真实数据 Integrating Your Data
 
-## 🔌 Integrating Your Own Data
-
-Replace the demo data generators in `src/lib/types.ts` with your API calls:
+将 `src/lib/types.ts` 中的 demo 数据生成器替换为 API 调用：
 
 ```typescript
-// Instead of:
+// 替换前 Before：
 const [agents] = useState(() => generateDemoAgents());
 
-// Use:
+// 替换后 After：
 useEffect(() => {
   fetch('/api/agents').then(r => r.json()).then(setAgents);
 }, []);
 ```
 
-The dashboard is designed to work with any agent framework that exposes metrics — Hermes Agent, LangChain, AutoGPT, etc.
+兼容任何暴露指标的 Agent 框架 —— Hermes Agent、LangChain、AutoGPT 等。
 
-## 📊 Metrics Tracked
+## 📊 监控指标 Metrics Tracked
 
-| Metric | Description |
-|--------|-------------|
-| Sessions | Total conversation sessions per agent |
-| Tokens | Input + output token consumption |
-| Tool Calls | Number of tool invocations |
-| Uptime | Agent running time |
-| Messages | Messages per session |
-| Last Active | Time since last interaction |
+| 指标 Metric | 说明 Description |
+|------------|-----------------|
+| Sessions | 每个 Agent 的会话总数 |
+| Tokens | 输入 + 输出 Token 消耗 |
+| Tool Calls | 工具调用次数 |
+| Uptime | Agent 运行时长 |
+| Messages | 每次会话的消息数 |
+| Last Active | 最近活跃时间 |
 
-## 🏗️ Tech Stack
+## 🏗️ 技术栈 Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Framework | Next.js 14 (App Router) |
-| Language | TypeScript |
-| Styling | Tailwind CSS |
-| Charts | Custom CSS/SVG (no chart library) |
-| State | React useState |
+| 层 Layer | 技术 Technology |
+|----------|---------------|
+| 框架 Framework | Next.js 14 (App Router) |
+| 语言 Language | TypeScript |
+| 样式 Styling | Tailwind CSS |
+| 图表 Charts | 纯 CSS（零图表库依赖） |
+| 状态 State | React useState |
 
-## 🤝 Contributing
+## 🤝 贡献 Contributing
 
-PRs welcome! Open an issue first for major changes.
+欢迎 PR！大改动请先开 issue。
 
-## 📄 License
+## 📄 许可 License
 
 MIT © [TeddyBobby](https://github.com/TeddyBobby)
