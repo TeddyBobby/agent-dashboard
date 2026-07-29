@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   generateDemoAgents,
   generateDemoSessions,
@@ -39,8 +39,8 @@ function formatUptime(s: number): string {
   return `${h}h ${m}m`;
 }
 
-function timeAgo(ms: number): string {
-  const diff = Date.now() - ms;
+function timeAgo(ms: number, now: number): string {
+  const diff = now - ms;
   const min = Math.floor(diff / 60000);
   if (min < 1) return '刚刚';
   if (min < 60) return `${min} 分钟前`;
@@ -56,6 +56,13 @@ export default function Home() {
   const [toolUsage] = useState<ToolUsage[]>(() => generateDemoToolUsage());
   const [search, setSearch] = useState('');
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
+  const [now, setNow] = useState(() => Date.now());
+
+  // Refresh time-ago labels every 30 seconds so they don't freeze
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(id);
+  }, []);
 
   const filteredSessions = sessions
     .filter((s) => !search || s.title.toLowerCase().includes(search.toLowerCase()))
@@ -93,7 +100,17 @@ export default function Home() {
             {agents.map((agent) => (
               <div
                 key={agent.id}
+                role="button"
+                tabIndex={0}
+                aria-pressed={selectedAgent === agent.id}
+                aria-label={`筛选 ${agent.name} 的会话`}
                 onClick={() => setSelectedAgent(selectedAgent === agent.id ? null : agent.id)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setSelectedAgent(selectedAgent === agent.id ? null : agent.id);
+                  }
+                }}
                 className={`p-4 rounded-xl border cursor-pointer transition-all ${
                   selectedAgent === agent.id
                     ? 'border-blue-500 ring-2 ring-blue-200 dark:ring-blue-800 bg-blue-50 dark:bg-blue-950/30'
@@ -206,13 +223,20 @@ export default function Home() {
             <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
               最近会话
             </h2>
-            <input
-              type="text"
-              placeholder="搜索会话..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 w-56"
-            />
+            <div role="search" className="flex items-center gap-2">
+              <label htmlFor="session-search" className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                搜索会话
+              </label>
+              <input
+                id="session-search"
+                type="search"
+                autoComplete="off"
+                placeholder="按标题搜索..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 w-56"
+              />
+            </div>
           </div>
           <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
             <table className="w-full text-sm">
@@ -250,7 +274,7 @@ export default function Home() {
                         <td className="px-4 py-3 text-gray-500 font-mono">{s.messageCount}</td>
                         <td className="px-4 py-3 text-gray-500 font-mono">{s.toolCallCount}</td>
                         <td className="px-4 py-3 text-gray-500 font-mono">{formatTokens(s.tokenCount)}</td>
-                        <td className="px-4 py-3 text-gray-400 text-xs">{timeAgo(s.lastActive)}</td>
+                        <td className="px-4 py-3 text-gray-400 text-xs">{timeAgo(s.lastActive, now)}</td>
                       </tr>
                     );
                   })
