@@ -55,7 +55,7 @@ useEffect(() => {
 
 | 层 Layer | 技术 Technology |
 |----------|---------------|
-| 框架 Framework | Next.js 14 (App Router) |
+| 框架 Framework | Next.js 16 (App Router, Turbopack) |
 | 语言 Language | TypeScript |
 | 样式 Styling | Tailwind CSS |
 | 图表 Charts | 纯 CSS（零图表库依赖） |

@@ -95,22 +95,39 @@ export function generateDemoSessions(): SessionInfo[] {
   ];
 }
 
+// Deterministic pseudo-random number generator (mulberry32).
+// Demo data is rendered during static prerendering (SSG) and again during
+// client hydration. Math.random() would produce different values on each pass,
+// causing React hydration mismatch warnings and a visible "jump" on load.
+// A seeded PRNG returns identical values on both server and client.
+function mulberry32(seed: number): () => number {
+  let a = seed >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
 export function generateDemoTokenUsage(): TokenUsage[] {
+  const rand = mulberry32(0x5eed_2026);
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   return days.map((date) => ({
     date,
-    input: Math.floor(Math.random() * 50000) + 10000,
-    output: Math.floor(Math.random() * 30000) + 5000,
+    input: Math.floor(rand() * 50000) + 10000,
+    output: Math.floor(rand() * 30000) + 5000,
   }));
 }
 
 export function generateDemoToolUsage(): ToolUsage[] {
+  const rand = mulberry32(0x1a2b_3c4d);
   const tools = ['read_file', 'write_file', 'terminal', 'web_search', 'search_files', 'patch'];
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
   const result: ToolUsage[] = [];
   for (const day of days) {
     for (const tool of tools) {
-      result.push({ tool, count: Math.floor(Math.random() * 30) + 1, day });
+      result.push({ tool, count: Math.floor(rand() * 30) + 1, day });
     }
   }
   return result;
