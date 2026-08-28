@@ -80,6 +80,7 @@ export default function Home() {
     },
     {} as Record<string, number>
   );
+  const sortedToolTotals = Object.entries(toolTotals).sort(([, a], [, b]) => b - a);
   const maxToolTotal = Math.max(...Object.values(toolTotals), 1);
 
   return (
@@ -177,7 +178,31 @@ export default function Home() {
             <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-4">
               Token 用量（7 天）
             </h3>
-            <div className="space-y-2">
+            {/* Screen-reader accessible data table for the chart below */}
+            <table className="sr-only">
+              <caption>过去 7 天 Token 用量，输入与输出</caption>
+              <thead>
+                <tr>
+                  <th scope="col">日期</th>
+                  <th scope="col">输入 Token</th>
+                  <th scope="col">输出 Token</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tokenUsage.map((day) => (
+                  <tr key={day.date}>
+                    <td>{day.date}</td>
+                    <td>{formatTokens(day.input)}</td>
+                    <td>{formatTokens(day.output)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div
+              role="img"
+              aria-label="过去 7 天 Token 用量柱状图：每个条形左侧蓝色为输入，右侧紫色为输出"
+              className="space-y-2"
+            >
               {tokenUsage.map((day) => {
                 const total = day.input + day.output;
                 const pct = (total / maxTokenVal) * 100;
@@ -216,26 +241,46 @@ export default function Home() {
             <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-4">
               工具用量
             </h3>
-            <div className="space-y-2">
-              {Object.entries(toolTotals)
-                .sort(([, a], [, b]) => b - a)
-                .map(([tool, count]) => {
-                  const pct = (count / maxToolTotal) * 100;
-                  return (
-                    <div key={tool} className="flex items-center gap-3">
-                      <span className="text-xs font-mono text-gray-600 dark:text-gray-300 w-24 truncate">
-                        {tool}
-                      </span>
-                      <div className="flex-1 h-5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full"
-                          style={{ width: `${pct}%` }}
-                        />
-                      </div>
-                      <span className="text-xs text-gray-500 font-mono w-8 text-right">{count}</span>
+            {/* Screen-reader accessible data table for the chart below */}
+            <table className="sr-only">
+              <caption>工具调用次数，按工具聚合</caption>
+              <thead>
+                <tr>
+                  <th scope="col">工具</th>
+                  <th scope="col">调用次数</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sortedToolTotals.map(([tool, count]) => (
+                  <tr key={tool}>
+                    <td>{tool}</td>
+                    <td>{count}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div
+              role="img"
+              aria-label="工具调用次数横向柱状图，按调用次数从高到低排列"
+              className="space-y-2"
+            >
+              {sortedToolTotals.map(([tool, count]) => {
+                const pct = (count / maxToolTotal) * 100;
+                return (
+                  <div key={tool} className="flex items-center gap-3">
+                    <span className="text-xs font-mono text-gray-600 dark:text-gray-300 w-24 truncate">
+                      {tool}
+                    </span>
+                    <div className="flex-1 h-5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full"
+                        style={{ width: `${pct}%` }}
+                      />
                     </div>
-                  );
-                })}
+                    <span className="text-xs text-gray-500 font-mono w-8 text-right">{count}</span>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -261,8 +306,9 @@ export default function Home() {
               />
             </div>
           </div>
-          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
-            <table className="w-full text-sm">
+          <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-x-auto">
+            <table className="w-full text-sm min-w-[640px]">
+              <caption className="sr-only">最近会话列表</caption>
               <thead>
                 <tr className="border-b border-gray-200 dark:border-gray-800 text-left">
                   <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">会话</th>
