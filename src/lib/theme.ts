@@ -1,8 +1,10 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useSyncExternalStore, useCallback } from 'react';
 
 type Theme = 'light' | 'dark';
+
+const STORAGE_KEY = 'theme';
 
 function getSystemTheme(): Theme {
   if (typeof window === 'undefined') return 'light';
@@ -12,7 +14,7 @@ function getSystemTheme(): Theme {
 function getStoredTheme(): Theme | null {
   if (typeof window === 'undefined') return null;
   try {
-    const stored = localStorage.getItem('theme');
+    const stored = localStorage.getItem(STORAGE_KEY);
     if (stored === 'light' || stored === 'dark') return stored;
   } catch {
     // localStorage unavailable (e.g. private browsing in some browsers)
@@ -20,45 +22,75 @@ function getStoredTheme(): Theme | null {
   return null;
 }
 
-function applyTheme(theme: Theme) {
-  const root = document.documentElement;
-  if (theme === 'dark') {
-    root.classList.add('dark');
-  } else {
-    root.classList.remove('dark');
+// Module-level cache of the current theme. This is the "external store" that
+// useSyncExternalStore subscribes to, so the value must stay stable between
+// renders until it actually changes.
+let currentTheme: Theme | null = null;
+
+const listeners = new Set<() => void>();
+
+function readTheme(): Theme {
+  return getStoredTheme() || getSystemTheme();
+}
+
+function getSnapshot(): Theme {
+  if (currentTheme === null) {
+    currentTheme = readTheme();
   }
+  return currentTheme;
+}
+
+// The server always renders 'light' because it can't know the client's
+// localStorage or system preference. Providing a matching server snapshot is
+// what lets useSyncExternalStore hydrate without a mismatch, then switch to
+// the real theme immediately after hydration.
+function getServerSnapshot(): Theme {
+  return 'light';
+}
+
+function applyThemeClass(theme: Theme) {
+  document.documentElement.classList.toggle('dark', theme === 'dark');
+}
+
+function persistTheme(theme: Theme) {
   try {
-    localStorage.setItem('theme', theme);
+    localStorage.setItem(STORAGE_KEY, theme);
   } catch {
     // ignore
   }
 }
 
+function setTheme(theme: Theme, persist: boolean) {
+  currentTheme = theme;
+  applyThemeClass(theme);
+  if (persist) persistTheme(theme);
+  listeners.forEach((listener) => listener());
+}
+
+function subscribe(listener: () => void): () => void {
+  listeners.add(listener);
+
+  // Follow system theme changes only while the user hasn't set an explicit
+  // preference (explicit choices are persisted to localStorage and win).
+  const mql = window.matchMedia('(prefers-color-scheme: dark)');
+  const onSystemChange = (e: MediaQueryListEvent) => {
+    if (getStoredTheme()) return;
+    setTheme(e.matches ? 'dark' : 'light', false);
+  };
+  mql.addEventListener('change', onSystemChange);
+
+  return () => {
+    mql.removeEventListener('change', onSystemChange);
+    listeners.delete(listener);
+  };
+}
+
 export function useTheme() {
-  const [theme, setTheme] = useState<Theme>(() => {
-    return getStoredTheme() || getSystemTheme();
-  });
-
-  useEffect(() => {
-    applyTheme(theme);
-  }, [theme]);
-
-  // Listen for system theme changes when user hasn't set a preference
-  useEffect(() => {
-    const stored = getStoredTheme();
-    if (stored) return; // User has explicit preference, don't follow system
-
-    const mql = window.matchMedia('(prefers-color-scheme: dark)');
-    const handler = (e: MediaQueryListEvent) => {
-      setTheme(e.matches ? 'dark' : 'light');
-    };
-    mql.addEventListener('change', handler);
-    return () => mql.removeEventListener('change', handler);
-  }, []);
+  const theme = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   const toggle = useCallback(() => {
-    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
-  }, []);
+    setTheme(theme === 'dark' ? 'light' : 'dark', true);
+  }, [theme]);
 
   return { theme, toggle };
 }
