@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   generateDemoAgents,
   generateDemoSessions,
@@ -27,6 +27,11 @@ const STATUS_LABELS: Record<string, string> = {
   offline: '离线',
 };
 
+// Columns that can be sorted on the session table. All four map to numeric
+// fields on SessionInfo, so a single numeric comparator handles them all.
+type SortKey = 'messageCount' | 'toolCallCount' | 'tokenCount' | 'lastActive';
+type SortDirection = 'asc' | 'desc';
+
 function formatTokens(n: number): string {
   if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
   if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
@@ -50,6 +55,53 @@ function timeAgo(ms: number, now: number): string {
   return `${Math.floor(hr / 24)} 天前`;
 }
 
+function SortHeader({
+  label,
+  column,
+  activeColumn,
+  direction,
+  onSort,
+}: {
+  label: string;
+  column: SortKey;
+  activeColumn: SortKey;
+  direction: SortDirection;
+  onSort: (column: SortKey) => void;
+}) {
+  const isActive = activeColumn === column;
+  return (
+    <th
+      scope="col"
+      aria-sort={isActive ? (direction === 'asc' ? 'ascending' : 'descending') : 'none'}
+      className="px-4 py-3 text-xs font-medium text-gray-500 uppercase"
+    >
+      <button
+        type="button"
+        onClick={() => onSort(column)}
+        className={`inline-flex items-center gap-1 rounded transition-colors hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:hover:text-gray-100 ${
+          isActive ? 'text-gray-900 dark:text-gray-100' : ''
+        }`}
+      >
+        {label}
+        <svg
+          aria-hidden="true"
+          className={`h-3 w-3 transition-transform ${
+            isActive && direction === 'asc' ? 'rotate-180' : ''
+          } ${
+            isActive ? 'text-gray-900 dark:text-gray-100' : 'text-gray-400 dark:text-gray-500'
+          }`}
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+    </th>
+  );
+}
+
 export default function Home() {
   const [agents] = useState<AgentInfo[]>(() => generateDemoAgents());
   const [sessions] = useState<SessionInfo[]>(() => generateDemoSessions());
@@ -58,6 +110,8 @@ export default function Home() {
   const [search, setSearch] = useState('');
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
+  const [sortColumn, setSortColumn] = useState<SortKey>('lastActive');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const { theme, toggle: toggleTheme } = useTheme();
 
   // Refresh time-ago labels every 30 seconds so they don't freeze
@@ -66,9 +120,27 @@ export default function Home() {
     return () => clearInterval(id);
   }, []);
 
-  const filteredSessions = sessions
-    .filter((s) => !search || s.title.toLowerCase().includes(search.toLowerCase()))
-    .filter((s) => !selectedAgent || s.agentId === selectedAgent);
+  const toggleSort = (column: SortKey) => {
+    if (column === sortColumn) {
+      setSortDirection((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortColumn(column);
+      setSortDirection('desc');
+    }
+  };
+
+  const filteredSessions = useMemo(
+    () =>
+      sessions
+        .filter((s) => !search || s.title.toLowerCase().includes(search.toLowerCase()))
+        .filter((s) => !selectedAgent || s.agentId === selectedAgent),
+    [sessions, search, selectedAgent]
+  );
+
+  const sortedSessions = useMemo(() => {
+    const factor = sortDirection === 'asc' ? 1 : -1;
+    return [...filteredSessions].sort((a, b) => (a[sortColumn] - b[sortColumn]) * factor);
+  }, [filteredSessions, sortColumn, sortDirection]);
 
   const maxTokenVal = Math.max(...tokenUsage.map((t) => t.input + t.output), 1);
 
@@ -311,23 +383,23 @@ export default function Home() {
               <caption className="sr-only">最近会话列表</caption>
               <thead>
                 <tr className="border-b border-gray-200 dark:border-gray-800 text-left">
-                  <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">会话</th>
-                  <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">智能体</th>
-                  <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">消息</th>
-                  <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">工具调用</th>
-                  <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">Token</th>
-                  <th className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">最近活跃</th>
+                  <th scope="col" className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">会话</th>
+                  <th scope="col" className="px-4 py-3 text-xs font-medium text-gray-500 uppercase">智能体</th>
+                  <SortHeader label="消息" column="messageCount" activeColumn={sortColumn} direction={sortDirection} onSort={toggleSort} />
+                  <SortHeader label="工具调用" column="toolCallCount" activeColumn={sortColumn} direction={sortDirection} onSort={toggleSort} />
+                  <SortHeader label="Token" column="tokenCount" activeColumn={sortColumn} direction={sortDirection} onSort={toggleSort} />
+                  <SortHeader label="最近活跃" column="lastActive" activeColumn={sortColumn} direction={sortDirection} onSort={toggleSort} />
                 </tr>
               </thead>
               <tbody>
-                {filteredSessions.length === 0 ? (
+                {sortedSessions.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="px-4 py-8 text-center text-gray-400">
                       未找到会话
                     </td>
                   </tr>
                 ) : (
-                  filteredSessions.map((s) => {
+                  sortedSessions.map((s) => {
                     const agent = agents.find((a) => a.id === s.agentId);
                     return (
                       <tr
