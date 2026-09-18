@@ -1,5 +1,16 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
+
+export const viewport: Viewport = {
+  // Match the mobile browser chrome (address bar) to the dashboard theme.
+  // gray-50 (#f9fafb) and gray-950 (#030712) mirror the page background.
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#f9fafb' },
+    { media: '(prefers-color-scheme: dark)', color: '#030712' },
+  ],
+  // The page renders both schemes (toggled via the `.dark` class on <html>).
+  colorScheme: 'light dark',
+};
 
 export const metadata: Metadata = {
   title: 'Agent Dashboard — Multi-Agent Monitoring & Analytics',

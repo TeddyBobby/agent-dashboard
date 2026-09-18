@@ -271,8 +271,7 @@ export default function Home() {
               </tbody>
             </table>
             <div
-              role="img"
-              aria-label="过去 7 天 Token 用量柱状图：每个条形左侧蓝色为输入，右侧紫色为输出"
+              aria-hidden="true"
               className="space-y-2"
             >
               {tokenUsage.map((day) => {
@@ -332,8 +331,7 @@ export default function Home() {
               </tbody>
             </table>
             <div
-              role="img"
-              aria-label="工具调用次数横向柱状图，按调用次数从高到低排列"
+              aria-hidden="true"
               className="space-y-2"
             >
               {sortedToolTotals.map(([tool, count]) => {
