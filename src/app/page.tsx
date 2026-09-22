@@ -55,6 +55,19 @@ function timeAgo(ms: number, now: number): string {
   return `${Math.floor(hr / 24)} 天前`;
 }
 
+// Heatmap cell colour. A sequential blue scale (blue-500 #3b82f6) encoded via
+// alpha so it reads correctly on both light and dark backgrounds without extra
+// CSS. Colour is never the only signal — every cell also prints its numeric
+// count, and the sr-only table below carries the full tool × day matrix.
+function heatCellStyle(count: number, max: number): { backgroundColor: string; color?: string } {
+  const ratio = max <= 0 ? 0 : count / max;
+  const alpha = 0.08 + ratio * 0.92;
+  return {
+    backgroundColor: `rgba(59, 130, 246, ${alpha.toFixed(3)})`,
+    color: alpha > 0.55 ? '#ffffff' : undefined,
+  };
+}
+
 function SortHeader({
   label,
   column,
@@ -144,16 +157,21 @@ export default function Home() {
 
   const maxTokenVal = Math.max(...tokenUsage.map((t) => t.input + t.output), 1);
 
-  // Aggregate tool usage by tool
-  const toolTotals = toolUsage.reduce(
-    (acc, t) => {
-      acc[t.tool] = (acc[t.tool] || 0) + t.count;
-      return acc;
-    },
-    {} as Record<string, number>
+  // Tool usage heatmap. `generateDemoToolUsage` already emits a per-day count
+  // for each tool, but the previous view flattened those into a single total
+  // and discarded the weekday dimension. A heatmap surfaces that dimension so
+  // you can see *when* each tool is used most, not just how much overall.
+  const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+  const toolTotals = toolUsage.reduce((acc, t) => {
+    acc[t.tool] = (acc[t.tool] || 0) + t.count;
+    return acc;
+  }, {} as Record<string, number>);
+  const sortedTools = Object.keys(toolTotals).sort((a, b) => toolTotals[b] - toolTotals[a]);
+  const heatmap = sortedTools.map((tool) =>
+    WEEKDAYS.map((day) => toolUsage.find((t) => t.tool === tool && t.day === day)?.count ?? 0)
   );
-  const sortedToolTotals = Object.entries(toolTotals).sort(([, a], [, b]) => b - a);
-  const maxToolTotal = Math.max(...Object.values(toolTotals), 1);
+  const rowTotals = heatmap.map((row) => row.reduce((a, b) => a + b, 0));
+  const maxHeat = Math.max(...heatmap.flat(), 1);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
@@ -312,45 +330,85 @@ export default function Home() {
             <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-4">
               工具用量
             </h3>
-            {/* Screen-reader accessible data table for the chart below */}
+            {/* Screen-reader accessible data table for the heatmap below */}
             <table className="sr-only">
-              <caption>工具调用次数，按工具聚合</caption>
+              <caption>工具调用次数热力图，按工具与星期分布</caption>
               <thead>
                 <tr>
                   <th scope="col">工具</th>
-                  <th scope="col">调用次数</th>
+                  {WEEKDAYS.map((day) => (
+                    <th key={day} scope="col">{day}</th>
+                  ))}
+                  <th scope="col">合计</th>
                 </tr>
               </thead>
               <tbody>
-                {sortedToolTotals.map(([tool, count]) => (
+                {sortedTools.map((tool, ti) => (
                   <tr key={tool}>
-                    <td>{tool}</td>
-                    <td>{count}</td>
+                    <th scope="row">{tool}</th>
+                    {heatmap[ti].map((count, di) => (
+                      <td key={WEEKDAYS[di]}>{count}</td>
+                    ))}
+                    <td>{rowTotals[ti]}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            <div
-              aria-hidden="true"
-              className="space-y-2"
-            >
-              {sortedToolTotals.map(([tool, count]) => {
-                const pct = (count / maxToolTotal) * 100;
-                return (
-                  <div key={tool} className="flex items-center gap-3">
-                    <span className="text-xs font-mono text-gray-600 dark:text-gray-300 w-24 truncate">
-                      {tool}
-                    </span>
-                    <div className="flex-1 h-5 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full"
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                    <span className="text-xs text-gray-500 font-mono w-8 text-right">{count}</span>
-                  </div>
-                );
-              })}
+            <div aria-hidden="true" className="overflow-x-auto">
+              <table className="w-full border-separate" style={{ borderSpacing: '4px' }}>
+                <thead>
+                  <tr>
+                    <th className="w-24" aria-hidden="true" />
+                    {WEEKDAYS.map((day) => (
+                      <th key={day} scope="col" className="text-center text-xs font-medium text-gray-500 uppercase">
+                        {day}
+                      </th>
+                    ))}
+                    <th scope="col" className="text-center text-xs font-medium text-gray-500 uppercase">
+                      合计
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedTools.map((tool, ti) => (
+                    <tr key={tool}>
+                      <th
+                        scope="row"
+                        className="text-left text-xs font-mono font-normal text-gray-600 dark:text-gray-300 max-w-24 truncate"
+                        title={tool}
+                      >
+                        {tool}
+                      </th>
+                      {heatmap[ti].map((count, di) => {
+                        const style = heatCellStyle(count, maxHeat);
+                        return (
+                          <td key={WEEKDAYS[di]} className="text-center">
+                            <div
+                              className="h-9 rounded-md flex items-center justify-center text-xs font-mono"
+                              style={{ backgroundColor: style.backgroundColor, color: style.color }}
+                              title={`${tool} · ${WEEKDAYS[di]}: ${count}`}
+                            >
+                              {count}
+                            </div>
+                          </td>
+                        );
+                      })}
+                      <td className="text-center text-xs font-semibold text-gray-700 dark:text-gray-200">
+                        {rowTotals[ti]}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="flex items-center gap-3 mt-3 text-xs text-gray-400">
+              <span className="flex items-center gap-1">
+                <span className="w-3 h-3 rounded bg-blue-200 inline-block" /> 少
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="w-3 h-3 rounded bg-blue-500 inline-block" /> 多
+              </span>
+              <span>颜色越深，调用越频繁</span>
             </div>
           </div>
         </div>
