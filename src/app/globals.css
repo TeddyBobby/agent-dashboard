@@ -20,3 +20,18 @@
     scrollbar-color: #475569 transparent;
   }
 }
+
+/* Respect the user's "reduce motion" OS preference (WCAG 2.3.3 / SC 2.2.2).
+   Collapses all animations and transitions — the loading-skeleton pulse, the
+   "busy" status dot, and hover transitions — into a single instant frame so
+   the dashboard stays still for users with vestibular motion sensitivity. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
