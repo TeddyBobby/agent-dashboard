@@ -12,6 +12,7 @@ import {
   ToolUsage,
 } from '@/lib/types';
 import { useTheme } from '@/lib/theme';
+import { formatTokens, formatUptime, timeAgo, heatCellStyle } from '@/lib/format';
 
 const STATUS_COLORS: Record<string, string> = {
   online: 'bg-green-500',
@@ -31,45 +32,6 @@ const STATUS_LABELS: Record<string, string> = {
 // fields on SessionInfo, so a single numeric comparator handles them all.
 type SortKey = 'messageCount' | 'toolCallCount' | 'tokenCount' | 'lastActive';
 type SortDirection = 'asc' | 'desc';
-
-function formatTokens(n: number): string {
-  if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
-  if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
-  return n.toString();
-}
-
-function formatUptime(s: number): string {
-  if (s === 0) return '—';
-  const d = Math.floor(s / 86400);
-  const h = Math.floor((s % 86400) / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  if (d > 0) return `${d}d ${h}h`;
-  if (h > 0) return `${h}h ${m}m`;
-  return `${m}m`;
-}
-
-function timeAgo(ms: number, now: number): string {
-  const diff = now - ms;
-  const min = Math.floor(diff / 60000);
-  if (min < 1) return '刚刚';
-  if (min < 60) return `${min} 分钟前`;
-  const hr = Math.floor(min / 60);
-  if (hr < 24) return `${hr} 小时前`;
-  return `${Math.floor(hr / 24)} 天前`;
-}
-
-// Heatmap cell colour. A sequential blue scale (blue-500 #3b82f6) encoded via
-// alpha so it reads correctly on both light and dark backgrounds without extra
-// CSS. Colour is never the only signal — every cell also prints its numeric
-// count, and the sr-only table below carries the full tool × day matrix.
-function heatCellStyle(count: number, max: number): { backgroundColor: string; color?: string } {
-  const ratio = max <= 0 ? 0 : count / max;
-  const alpha = 0.08 + ratio * 0.92;
-  return {
-    backgroundColor: `rgba(59, 130, 246, ${alpha.toFixed(3)})`,
-    color: alpha > 0.55 ? '#ffffff' : undefined,
-  };
-}
 
 function SortHeader({
   label,
