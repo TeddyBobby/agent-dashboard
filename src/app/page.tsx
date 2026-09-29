@@ -13,6 +13,7 @@ import {
 } from '@/lib/types';
 import { useTheme } from '@/lib/theme';
 import { formatTokens, formatUptime, timeAgo, heatCellStyle } from '@/lib/format';
+import { summarizeAgents } from '@/lib/summary';
 
 const STATUS_COLORS: Record<string, string> = {
   online: 'bg-green-500',
@@ -120,6 +121,8 @@ export default function Home() {
     return [...filteredSessions].sort((a, b) => (a[sortColumn] - b[sortColumn]) * factor);
   }, [filteredSessions, sortColumn, sortDirection]);
 
+  const summary = useMemo(() => summarizeAgents(agents), [agents]);
+
   const maxTokenVal = Math.max(...tokenUsage.map((t) => t.input + t.output), 1);
 
   // Tool usage heatmap. `generateDemoToolUsage` already emits a per-day count
@@ -170,6 +173,43 @@ export default function Home() {
       </header>
 
       <div className="max-w-7xl mx-auto p-6 space-y-6">
+        {/* Aggregate summary KPIs */}
+        <section aria-label="概览">
+          <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
+            概览
+          </h2>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="w-2 h-2 rounded-full bg-green-500" aria-hidden="true" />
+                <span className="text-xs text-gray-400">在线 Agent</span>
+              </div>
+              <div className="text-2xl font-semibold text-gray-800 dark:text-gray-200">
+                {summary.active}
+                <span className="text-sm font-normal text-gray-400"> / {summary.total}</span>
+              </div>
+            </div>
+            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
+              <div className="text-xs text-gray-400 mb-1">总会话</div>
+              <div className="text-2xl font-semibold text-gray-800 dark:text-gray-200">
+                {summary.totalSessions.toLocaleString('en-US')}
+              </div>
+            </div>
+            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
+              <div className="text-xs text-gray-400 mb-1">累计 Token</div>
+              <div className="text-2xl font-semibold text-gray-800 dark:text-gray-200">
+                {formatTokens(summary.totalTokens)}
+              </div>
+            </div>
+            <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
+              <div className="text-xs text-gray-400 mb-1">累计工具调用</div>
+              <div className="text-2xl font-semibold text-gray-800 dark:text-gray-200">
+                {formatTokens(summary.totalToolCalls)}
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* Agent status cards */}
         <section>
           <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-3">
