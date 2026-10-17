@@ -30,6 +30,19 @@ export function formatUptime(s: number): string {
 }
 
 /**
+ * Render a plain count with thousands separators (`10,706`).
+ *
+ * Counts are exact quantities — sessions, tool calls — and must not be
+ * abbreviated the way `formatTokens` abbreviates token totals. A fixed
+ * `en-US` locale keeps the grouping deterministic on both server (SSG) and
+ * client (hydration), avoiding the mismatch an environment-dependent locale
+ * would introduce.
+ */
+export function formatCount(n: number): string {
+  return n.toLocaleString('en-US');
+}
+
+/**
  * Relative time label (`刚刚`, `5 分钟前`, `2 小时前`, `3 天前`) for a
  * millisecond timestamp, measured against a supplied `now`.
  */

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatTokens, formatUptime, timeAgo, heatCellStyle } from './format';
+import { formatTokens, formatUptime, timeAgo, heatCellStyle, formatCount } from './format';
 
 describe('formatTokens', () => {
   it('returns plain integers below 1000', () => {
@@ -17,6 +17,15 @@ describe('formatTokens', () => {
   it('abbreviates millions with an M suffix', () => {
     expect(formatTokens(1000000)).toBe('1.0M');
     expect(formatTokens(2500000)).toBe('2.5M');
+  });
+});
+
+describe('formatCount', () => {
+  it('groups thousands with commas and leaves small values intact', () => {
+    expect(formatCount(0)).toBe('0');
+    expect(formatCount(804)).toBe('804');
+    expect(formatCount(10706)).toBe('10,706');
+    expect(formatCount(1234567)).toBe('1,234,567');
   });
 });
 

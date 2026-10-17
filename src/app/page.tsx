@@ -12,7 +12,7 @@ import {
   ToolUsage,
 } from '@/lib/types';
 import { useTheme } from '@/lib/theme';
-import { formatTokens, formatUptime, timeAgo, heatCellStyle } from '@/lib/format';
+import { formatTokens, formatUptime, timeAgo, heatCellStyle, formatCount } from '@/lib/format';
 import { summarizeAgents } from '@/lib/summary';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -192,7 +192,7 @@ export default function Home() {
             <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
               <div className="text-xs text-gray-400 mb-1">总会话</div>
               <div className="text-2xl font-semibold text-gray-800 dark:text-gray-200">
-                {summary.totalSessions.toLocaleString('en-US')}
+                {formatCount(summary.totalSessions)}
               </div>
             </div>
             <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
@@ -204,7 +204,7 @@ export default function Home() {
             <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-4">
               <div className="text-xs text-gray-400 mb-1">累计工具调用</div>
               <div className="text-2xl font-semibold text-gray-800 dark:text-gray-200">
-                {formatTokens(summary.totalToolCalls)}
+                {formatCount(summary.totalToolCalls)}
               </div>
             </div>
           </div>
