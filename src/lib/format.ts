@@ -57,6 +57,18 @@ export function timeAgo(ms: number, now: number): string {
 }
 
 /**
+ * Render a millisecond timestamp as a locale-independent 24-hour clock
+ * (`14:32:05`). Hand-rolled zero-padding keeps the output identical on the
+ * server (SSG) and client (hydration), where `toLocaleTimeString` would
+ * otherwise vary with the host locale and timezone.
+ */
+export function formatClock(ms: number): string {
+  const d = new Date(ms);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
+/**
  * Heatmap cell colour. A sequential blue scale (blue-500 #3b82f6) encoded via
  * alpha so it reads correctly on both light and dark backgrounds without extra
  * CSS. Colour is never the only signal — the caller also prints each cell's

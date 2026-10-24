@@ -110,8 +110,11 @@ function mulberry32(seed: number): () => number {
   };
 }
 
-export function generateDemoTokenUsage(): TokenUsage[] {
-  const rand = mulberry32(0x5eed_2026);
+// Accepts an optional seed so the dashboard can simulate a live data refresh:
+// rotating the seed yields a fresh-but-deterministic dataset, while the
+// default seed keeps the initial SSG render identical to client hydration.
+export function generateDemoTokenUsage(seed = 0x5eed_2026): TokenUsage[] {
+  const rand = mulberry32(seed);
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   return days.map((date) => ({
     date,
@@ -120,8 +123,8 @@ export function generateDemoTokenUsage(): TokenUsage[] {
   }));
 }
 
-export function generateDemoToolUsage(): ToolUsage[] {
-  const rand = mulberry32(0x1a2b_3c4d);
+export function generateDemoToolUsage(seed = 0x1a2b_3c4d): ToolUsage[] {
+  const rand = mulberry32(seed);
   const tools = ['read_file', 'write_file', 'terminal', 'web_search', 'search_files', 'patch'];
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
   const result: ToolUsage[] = [];

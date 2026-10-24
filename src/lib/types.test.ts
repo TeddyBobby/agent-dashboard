@@ -43,4 +43,16 @@ describe('demo data generators', () => {
     expect(generateDemoToolUsage()).toEqual(generateDemoToolUsage());
     expect(generateDemoAgents()).toEqual(generateDemoAgents());
   });
+
+  it('is stable for a given seed', () => {
+    expect(generateDemoTokenUsage(42)).toEqual(generateDemoTokenUsage(42));
+    expect(generateDemoToolUsage(42)).toEqual(generateDemoToolUsage(42));
+  });
+
+  it('rotates to a different dataset when the seed changes', () => {
+    // A rotated seed must yield visibly different metrics so a "live refresh"
+    // actually changes the charts rather than re-rendering identical data.
+    expect(generateDemoTokenUsage(1)).not.toEqual(generateDemoTokenUsage(2));
+    expect(generateDemoToolUsage(1)).not.toEqual(generateDemoToolUsage(2));
+  });
 });

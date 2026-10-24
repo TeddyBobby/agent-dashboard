@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatTokens, formatUptime, timeAgo, heatCellStyle, formatCount } from './format';
+import { formatTokens, formatUptime, timeAgo, heatCellStyle, formatCount, formatClock } from './format';
 
 describe('formatTokens', () => {
   it('returns plain integers below 1000', () => {
@@ -69,6 +69,20 @@ describe('timeAgo', () => {
 
   it('labels day-old timestamps', () => {
     expect(timeAgo(now - 3 * 86_400_000, now)).toBe('3 天前');
+  });
+});
+
+describe('formatClock', () => {
+  it('renders a locale-independent 24-hour HH:MM:SS clock', () => {
+    expect(formatClock(new Date(2026, 0, 1, 14, 32, 5).getTime())).toBe('14:32:05');
+  });
+
+  it('zero-pads single-digit hours, minutes and seconds', () => {
+    expect(formatClock(new Date(2026, 0, 1, 9, 5, 3).getTime())).toBe('09:05:03');
+  });
+
+  it('renders midnight as 00:00:00', () => {
+    expect(formatClock(new Date(2026, 0, 1, 0, 0, 0).getTime())).toBe('00:00:00');
   });
 });
 

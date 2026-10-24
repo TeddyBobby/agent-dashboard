@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   generateDemoAgents,
   generateDemoSessions,
@@ -12,7 +12,7 @@ import {
   ToolUsage,
 } from '@/lib/types';
 import { useTheme } from '@/lib/theme';
-import { formatTokens, formatUptime, timeAgo, heatCellStyle, formatCount } from '@/lib/format';
+import { formatTokens, formatUptime, timeAgo, heatCellStyle, formatCount, formatClock } from '@/lib/format';
 import { summarizeAgents } from '@/lib/summary';
 
 const STATUS_COLORS: Record<string, string> = {
@@ -84,13 +84,15 @@ function SortHeader({
 export default function Home() {
   const [agents] = useState<AgentInfo[]>(() => generateDemoAgents());
   const [sessions] = useState<SessionInfo[]>(() => generateDemoSessions());
-  const [tokenUsage] = useState<TokenUsage[]>(() => generateDemoTokenUsage());
-  const [toolUsage] = useState<ToolUsage[]>(() => generateDemoToolUsage());
+  const [tokenUsage, setTokenUsage] = useState<TokenUsage[]>(() => generateDemoTokenUsage());
+  const [toolUsage, setToolUsage] = useState<ToolUsage[]>(() => generateDemoToolUsage());
   const [search, setSearch] = useState('');
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
   const [now, setNow] = useState(() => Date.now());
   const [sortColumn, setSortColumn] = useState<SortKey>('lastActive');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [lastUpdated, setLastUpdated] = useState<number | null>(null);
+  const [autoRefresh, setAutoRefresh] = useState(true);
   const { theme, toggle: toggleTheme } = useTheme();
 
   // Refresh time-ago labels every 30 seconds so they don't freeze
@@ -98,6 +100,31 @@ export default function Home() {
     const id = setInterval(() => setNow(Date.now()), 30_000);
     return () => clearInterval(id);
   }, []);
+
+  // Stamp the initial (prerendered) data load time. Deferred to an effect so
+  // the server and client both render the placeholder on first paint, avoiding
+  // a hydration mismatch from clock drift between the two passes.
+  useEffect(() => {
+    setLastUpdated(Date.now());
+  }, []);
+
+  // Re-pull the (mock) live metrics. Rotating the PRNG seed yields a fresh but
+  // deterministic dataset, so the token chart and tool heatmap visibly update
+  // while the initial SSG render stays identical to client hydration.
+  const refresh = useCallback(() => {
+    const nextSeed = Date.now();
+    setTokenUsage(generateDemoTokenUsage(nextSeed));
+    setToolUsage(generateDemoToolUsage(nextSeed));
+    setLastUpdated(Date.now());
+  }, []);
+
+  // Auto-refresh the live metrics on a toggleable interval. Runs only on the
+  // client — the interval is torn down when auto-refresh is disabled.
+  useEffect(() => {
+    if (!autoRefresh) return;
+    const id = setInterval(refresh, 15_000);
+    return () => clearInterval(id);
+  }, [autoRefresh, refresh]);
 
   const toggleSort = (column: SortKey) => {
     if (column === sortColumn) {
@@ -152,12 +179,42 @@ export default function Home() {
               实时监控你的 AI Agent
             </p>
           </div>
-          <button
-            type="button"
-            onClick={toggleTheme}
-            aria-label={theme === 'dark' ? '切换到亮色模式' : '切换到暗色模式'}
-            className="p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-          >
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="hidden sm:flex items-center gap-1.5 text-xs text-gray-400">
+              <span className="relative flex h-2 w-2" aria-hidden="true">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
+              </span>
+              <span>最后更新 {lastUpdated === null ? '…' : formatClock(lastUpdated)}</span>
+            </div>
+            <button
+              type="button"
+              onClick={refresh}
+              aria-label="刷新数据"
+              className="p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            >
+              <svg className="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              onClick={() => setAutoRefresh((v) => !v)}
+              aria-pressed={autoRefresh}
+              className={`hidden sm:inline-flex px-2.5 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
+                autoRefresh
+                  ? 'border-green-300 bg-green-50 text-green-700 dark:border-green-700 dark:bg-green-900/30 dark:text-green-300'
+                  : 'border-gray-200 bg-white text-gray-500 hover:bg-gray-100 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'
+              }`}
+            >
+              自动刷新：{autoRefresh ? '开' : '关'}
+            </button>
+            <button
+              type="button"
+              onClick={toggleTheme}
+              aria-label={theme === 'dark' ? '切换到亮色模式' : '切换到暗色模式'}
+              className="p-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            >
             {/* Sun icon for dark mode → switch to light */}
             {theme === 'dark' ? (
               <svg className="w-5 h-5 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -169,6 +226,7 @@ export default function Home() {
               </svg>
             )}
           </button>
+          </div>
         </div>
       </header>
 
