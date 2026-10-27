@@ -91,7 +91,7 @@ export default function Home() {
   const [now, setNow] = useState(() => Date.now());
   const [sortColumn, setSortColumn] = useState<SortKey>('lastActive');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
-  const [lastUpdated, setLastUpdated] = useState<number | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<number>(() => Date.now());
   const [autoRefresh, setAutoRefresh] = useState(true);
   const { theme, toggle: toggleTheme } = useTheme();
 
@@ -99,13 +99,6 @@ export default function Home() {
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 30_000);
     return () => clearInterval(id);
-  }, []);
-
-  // Stamp the initial (prerendered) data load time. Deferred to an effect so
-  // the server and client both render the placeholder on first paint, avoiding
-  // a hydration mismatch from clock drift between the two passes.
-  useEffect(() => {
-    setLastUpdated(Date.now());
   }, []);
 
   // Re-pull the (mock) live metrics. Rotating the PRNG seed yields a fresh but
@@ -185,7 +178,7 @@ export default function Home() {
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
               </span>
-              <span>最后更新 {lastUpdated === null ? '…' : formatClock(lastUpdated)}</span>
+              <span role="status" suppressHydrationWarning>最后更新 {formatClock(lastUpdated)}</span>
             </div>
             <button
               type="button"
@@ -328,9 +321,9 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Token usage bar chart */}
           <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
-            <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-4">
+            <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-4">
               Token 用量（7 天）
-            </h3>
+            </h2>
             {/* Screen-reader accessible data table for the chart below */}
             <table className="sr-only">
               <caption>过去 7 天 Token 用量，输入与输出</caption>
@@ -390,9 +383,9 @@ export default function Home() {
 
           {/* Tool usage heatmap */}
           <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 p-5">
-            <h3 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-4">
+            <h2 className="text-sm font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-4">
               工具用量
-            </h3>
+            </h2>
             {/* Screen-reader accessible data table for the heatmap below */}
             <table className="sr-only">
               <caption>工具调用次数热力图，按工具与星期分布</caption>

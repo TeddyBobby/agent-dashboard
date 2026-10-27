@@ -50,7 +50,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="min-h-screen bg-gray-50 dark:bg-gray-950 text-gray-900 dark:text-gray-100">
-        <main>{children}</main>
+        {/* Keyboard skip link — the first focusable element lets screen-reader and
+            keyboard users bypass the header straight to the dashboard content
+            (WCAG 2.4.1 Bypass Blocks). Rendered off-canvas and slid into view
+            on focus so it stays invisible to pointer users. */}
+        <a
+          href="#main-content"
+          className="fixed left-4 top-4 z-50 -translate-y-20 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-lg transition-transform focus:translate-y-0 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-gray-950"
+        >
+          跳到主内容
+        </a>
+        <main id="main-content" tabIndex={-1} className="outline-none">
+          {children}
+        </main>
       </body>
     </html>
   );
